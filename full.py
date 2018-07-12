@@ -201,8 +201,8 @@ class AllRockerPlayer(Player):
     def move(self):
         return int(1)
 
-    def remember():
-        print("")
+    def remember(self):
+        return
 
 
 class CyclePlayer(Player):
@@ -241,7 +241,7 @@ def Start():
                              "\n3. Multiple Rounds(Human vs Always Rock)" +
                              "\n4. Multiple Rounds(Human vs Copy)" +
                              "\n5. Multiple Rounds(Human vs Cycle)"))
-        if 0 < GameType < 5:
+        if 0 < GameType < 6:
             if GameType == 1:
                 g = Game(1)
                 g.SingleRound()
