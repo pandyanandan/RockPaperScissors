@@ -19,9 +19,6 @@ paper vs scissor-> scissor wins
 import random
 from termcolor import cprint
 
-h_choice = 1
-roto = 1
-
 
 class Game(object):
     def __init__(self, Rounds):
@@ -31,22 +28,60 @@ class Game(object):
 
     def SingleRound(self):
         name = input("Enter name:")
-        while True:
-            c = input("Enter choice \n 1. Rock \n 2. Paper \n 3. Scissor \n")
-            if not c.isdigit():
-                cprint("Please Enter Valid Choice !", 'red')
-                continue
-            else:
-                c = int(c)
-            if 0 < c < 4:
-                Human(name, c)
-                break
-            else:
-                cprint("Please Enter Valid Choice !", 'red')
-                continue
-        cpu = CPU("CPU1", 1)
-        cpu.remember(c)
-        self.CheckWinner(c, cpu.getChoice())
+        human = HumanPlayer(name)
+        human.move()
+        cpu = RandomPlayer("CPU1", human.returnChoice())
+        cpu.move()
+        self.CheckWinner(human.returnChoice(), cpu.getChoice())
+
+    def MultipleRounds(self, Rounds):
+        i = 1
+        while i <= Rounds:
+            self.SingleRound()
+            i = i + 1
+        self.DisplayScoreRound()
+
+    def SingleRoundRock(self):
+        name = input("Enter name:")
+        human = HumanPlayer(name)
+        human.move()
+        cpu = AllRockerPlayer("CPU1", human.returnChoice())
+        cpu.move()
+        self.CheckWinner(human.returnChoice(), 1)
+
+    def MultipleRoundsRock(self, Rounds):
+        i = 1
+        while i <= Rounds:
+            self.SingleRoundRock()
+            i = i + 1
+        self.DisplayScoreRound()
+
+    def MultipleRoundsCycle(self, Rounds):
+        i = 1
+        human = HumanPlayer("abc")
+        cpu = CyclePlayer("CPU1", 1)
+        while i <= Rounds:
+            name = input("Enter name:")
+            human = HumanPlayer(name)
+            human.move()
+            self.CheckWinner(human.returnChoice(), cpu.move())
+            i = i + 1
+        self.DisplayScoreRound()
+
+    def MultipleRoundsReflect(self, Rounds):
+        i = 1
+        human = HumanPlayer("abc")
+        cpu = ReflectPlayer("CPU1", 1)
+        human_choice = 0
+        while i <= Rounds:
+            name = input("Enter name:")
+            human = HumanPlayer(name)
+            human.move()
+            cpu_move = cpu.move()
+            cpu.remember(human.returnChoice())
+            self.CheckWinner(human.returnChoice(), cpu_move)
+            i = i + 1
+        self.DisplayScoreRound()
 
     def CheckWinner(self, h, c):
         cprint("Your Choice:" + str(h), 'blue')
@@ -75,13 +110,6 @@ class Game(object):
                 cprint("Scissors beats Paper: You win!", 'magenta')
                 self._human_CurrentScore = self._human_CurrentScore + 1
 
-    def MultipleRounds(self, Rounds):
-        i = 1
-        while i <= Rounds:
-            self.SingleRound()
-            i = i + 1
-        self.DisplayScoreRound()
-
     def DisplayScoreRound(self):
         cprint("CPU Score :" + str(self._cpu_CurrentScore),
                'grey', 'on_magenta')
@@ -102,55 +130,104 @@ class Player(object):
         self._Choice = Choice
 
 
-class Human(Player):
+class HumanPlayer(Player):
 
-    def __init__(self, Name, Choice):
-        super(Human, self).__init__(Name, Choice)
+    def __init__(self, Name):
+        self._Name = Name
+        self._Choice = 0
+
+    def returnChoice(self):
+        return self._Choice
+
+    def move(self):
+        while True:
+            self._Choice = input("Enter choice \n 1. Rock \n 2. Paper" +
+                                 "\n 3. Scissor \n")
+            if not self._Choice.isdigit():
+                cprint("Please Enter Valid Choice !", 'red')
+                continue
+            else:
+                self._Choice = int(self._Choice)
+            if 0 < self._Choice < 4:
+                super(HumanPlayer, self).__init__(self._Name, self._Choice)
+                break
+            else:
+                cprint("Please Enter Valid Choice !", 'red')
+                continue
+
+    def remember(self):
+        return
 
 
-class CPU(Player):
-
+class RandomPlayer(Player):
     def __init__(self, Name, Choice):
         self._Name = Name
         self._Choice = Choice
-        self.move()
-        super(CPU, self).__init__(self._Name, self._Choice)
+        super(RandomPlayer, self).__init__(self._Name, self._Choice)
 
     def move(self):
-        selection = random.randint(1, 4)
-        if selection == 1:
-            self._Choice = self.strategy1()
-        elif selection == 2:
-            self._Choice = self.strategy2()
-        elif selection == 3:
-            self._Choice = self.strategy3()
-        else:
-            self._Choice = self.strategy4(roto)
-
-    def strategy1(self):
-        return int(1)
-
-    def strategy2(self):
-        return int(random.randint(1, 3))
-
-    def strategy3(self):
-        return int(h_choice)
-
-    def strategy4(self, roto1):
-        global roto
-        if roto1 == 1 or roto1 == 2:
-            roto = roto + 1
-            return int(roto1)
-        if roto == 3:
-            roto = 1
-            return int(3)
+        move = random.randint(1, 3)
+        self._Choice = move
+        return move
 
     def getChoice(self):
         return self._Choice
 
-    def remember(self, l_h_choice):
-        global h_choice
-        h_choice = l_h_choice
+    def remember(self):
+        return
+
+
+class ReflectPlayer(Player):
+
+    def __init__(self, Name, Choice):
+        self._Name = Name
+        self._Choice = Choice
+        self._last_move = Choice
+        super(ReflectPlayer, self).__init__(self._Name, self._Choice)
+
+    def move(self):
+        return self._last_move
+
+    def remember(self, lmove):
+        self._last_move = lmove
+
+
+class AllRockerPlayer(Player):
+    def __init__(self, Name, Choice):
+        self._Name = Name
+        self._Choice = Choice
+        super(AllRockerPlayer, self).__init__(self._Name, self._Choice)
+
+    def move(self):
+        return int(1)
+
+    def remember():
+        print("")
+
+
+class CyclePlayer(Player):
+    _last_move = 0
+
+    def __init__(self, Name, Choice):
+        self._Name = Name
+        self._Choice = Choice
+        super(CyclePlayer, self).__init__(self._Name, self._Choice)
+
+    def move(self):
+        move = 0
+        if self._last_move == 0:
+            move = 1
+        elif self._last_move == 1:
+            move = 2
+        else:
+            move = 3
+        self._last_move += 1
+        if self._last_move >= 3:
+            self._last_move = 0
+        return move
+
+    def remember(self):
+        return
 
 
 def Start():
@@ -159,19 +236,59 @@ def Start():
            + "Rock vs scissor->Rock wins \n"
            + "paper vs scissor->scissor wins \n", 'green')
     while True:
-        GameType = int(input("1. Single Round \n2. Multiple Rounds"))
-        if 0 < GameType < 3:
+        GameType = int(input("1. Single Round (Human vs Random)" +
+                             "\n2. Multiple Rounds(Human vs Random)" +
+                             "\n3. Multiple Rounds(Human vs Always Rock)" +
+                             "\n4. Multiple Rounds(Human vs Copy)" +
+                             "\n5. Multiple Rounds(Human vs Cycle)"))
+        if 0 < GameType < 5:
             if GameType == 1:
                 g = Game(1)
                 g.SingleRound()
                 break
-            else:
+            elif GameType == 2:
                 while True:
                     GameRounds = int(input("How Many Rounds Would you Like to"
                                            + "play ?(Maximum 3)"))
                     if 0 < GameRounds < 4:
                         g = Game(GameRounds)
                         g.MultipleRounds(GameRounds)
+                        break
+                    else:
+                        cprint("Please Enter Valid number !", 'red')
+                        continue
+                break
+            elif GameType == 3:
+                while True:
+                    GameRounds = int(input("How Many Rounds Would you Like to"
+                                           + "play ?(Maximum 3)"))
+                    if 0 < GameRounds < 4:
+                        g = Game(GameRounds)
+                        g.MultipleRoundsRock(GameRounds)
+                        break
+                    else:
+                        cprint("Please Enter Valid number !", 'red')
+                        continue
+                break
+            elif GameType == 4:
+                while True:
+                    GameRounds = int(input("How Many Rounds Would you Like to"
+                                           + "play ?(Maximum 3)"))
+                    if 0 < GameRounds < 4:
+                        g = Game(GameRounds)
+                        g.MultipleRoundsReflect(GameRounds)
+                        break
+                    else:
+                        cprint("Please Enter Valid number !", 'red')
+                        continue
+                break
+            elif GameType == 5:
+                while True:
+                    GameRounds = int(input("How Many Rounds Would you Like to"
+                                           + "play ?(Maximum 3)"))
+                    if 0 < GameRounds < 4:
+                        g = Game(GameRounds)
+                        g.MultipleRoundsCycle(GameRounds)
                         break
                     else:
                         cprint("Please Enter Valid number !", 'red')
